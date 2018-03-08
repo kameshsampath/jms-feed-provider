@@ -1,0 +1,104 @@
+---
+apiVersion: v1
+data:
+  couchdbpassword: cGFzc3dvcmQ=
+  couchdbuser: YWRtaW4=
+kind: Secret
+metadata:
+  name: tiggerstore
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: triggerstore
+  name: triggerstore
+spec:
+  ports:
+  - name: couchdb
+    port: 5984
+    targetPort: 5984
+  selector:
+    app: triggerstore
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app: triggerstore
+  name: couchdb-rest
+spec:
+  port:
+    targetPort: couchdb
+  to:
+    kind: Service
+    name: triggerstore
+    weight: 100
+---
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  creationTimestamp: null
+  labels:
+    app: triggerstore
+  name: triggerstore
+spec:
+  replicas: 1
+  strategy:
+    resources: {}
+  template:
+    metadata:
+      labels:
+        app: triggerstore
+      name: triggerstore
+    spec:
+      containers:
+      - env:
+        - name: DB_HOST
+          value: "127.0.0.1"
+        - name: DB_PORT
+          value: "5984"
+        - name: COUCHDB_USER
+          valueFrom:
+            secretKeyRef:
+              name: tiggerstore
+              key: couchdbuser
+        - name: COUCHDB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: tiggerstore
+              key: couchdbpassword
+        image: docker.io/kameshsampath/couchdb
+        imagePullPolicy: IfNotPresent
+        command: ["/init.sh"]
+        ports:
+        - name: couchdb
+          containerPort: 5984
+        name: couchdb
+        readinessProbe:
+          httpGet:
+            port: 5984
+            path: "/"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 10
+          timeoutSeconds: 1
+        resources: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: couchdb-netpol
+  namespace: openwhisk
+spec:
+  podSelector:
+    matchLabels:
+      name: triggerstore
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: infinispan-feed-provider
+    ports:
+     - port: 5984

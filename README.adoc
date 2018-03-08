@@ -1,0 +1,88 @@
+= JMS Feed Provider
+
+This project acts as `Provider Service` that helps in implementing OpenWhisk Feeds
+via https://github.com/apache/incubator-openwhisk/blob/master/docs/feeds.md#implementing-feeds-via-connections[Connections]
+
+In this demo provider service registers JMS Listeners to make JMS Destinations Queues/Topics
+a event source to OpenWhisk triggers. When ever a message is sent to the JMS Destination
+this Feed will fire all the associated Triggers with event data as payload.
+
+NOTE: This demo assumes are messages are sent as JSON string.
+
+Refer to the following links for more information on Triggers, Rules and Feeds
+
+* https://github.com/apache/incubator-openwhisk/blob/master/docs/triggers_rules.md[Triggers and Rules]
+* https://github.com/apache/incubator-openwhisk/blob/master/docs/feeds.md[Feeds]
+
+[[pre-req]]
+= Pre-requisite
+
+* Deploy https://activemq.apache.org/artemis to OpenShift using link:./artemis/artemis.yml
+* Deploy https://github.com/projectodd/openwhisk-openshift#installing-on-minishift[OpenWhisk on Minishift]
+* http://couchdb.apache.org/[Apache CouchDB] will be used to persist the trigger data
+
+[IMPORTANT]
+====
+* For all the CLI commands to work as it is, deploy OpenWhisk to a OpenShift Project
+called `openwhisk`
+* Deploy applications infinispan and infinispan-feed-provider to `myproject` workspace
+* make user `developer` as admin for both these projects via
+[code,sh]
+----
+ oc adm policy add-role-to-user admin developer -n openwhisk
+----
+====
+* Enable the `anyuid` and `admin-user` addons, `anyuid` is required for CouchDB to run as
+user with `anyuid`
+
+[[build-and-deploy]]
+== Build and Deploy
+
+=== Database
+
+As described in <<pre-req>> section this application uses http://couchdb.apache.org/[Apache CouchDB] to persist the
+provider trigger data. The following command shows how to deploy CouchDB:
+
+[code,sh]
+----
+oc apply -f couchdb/couchdb.yaml <1>
+----
+
+<1> Deploys CouchDB in OpenShift and sets up the CouchDB for Single Node Environment as said in http://docs.couchdb.org/en/2.1.1/install/setup.html#install-setup
+
+[NOTE]
+====
+OpenWhisk Deployment already has CouchDB deployed, if you wish to use it you can alter the
+**spring.couchbase.bootstrap-hosts** in link:./src/main/resources/application.yaml. Just for sake of
+clarity and to prevent any mess with OpenWhisk data its recommened to deploy seperate.
+====
+
+=== Message Broker
+
+As described in <<pre-req>> section this application uses https://activemq.apache.org/artemis as the Message Broker.
+The following command shows how to deploy Apache Artemis:
+
+[code,sh]
+----
+oc apply -f artemis/artemis.yml <1>
+----
+
+<1> Deploys Apache Artemis in OpenShift
+
+[WARNING]
+====
+Currently the Apache Artemis Console is not accessible via nip.io ip in Minishift, hence the dpeloyment has defined
+node ports for enabling access outside cluster
+====
+
+
+=== Application
+
+[code,sh]
+----
+mvn clean package fabric8:deploy
+----
+
+=== Testing
+
+WIP

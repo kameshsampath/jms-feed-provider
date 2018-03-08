@@ -1,0 +1,15 @@
+
+openwhisk:
+  apiHost: "http://nginx.openwhisk.svc.cluster.local/api/v1/namespaces/_/triggers"
+  dbName: "jmstriggerfeeds"
+
+spring:
+  artemis:
+    host: 192.168.64.65
+    port: 31369
+
+COUCHDB_USER: admin
+COUCHDB_PASSWORD: password
+TRIGGERSTORE_SERVICE_HOST: couchdb-rest-myproject.192.168.64.65.nip.io
+TRIGGERSTORE_SERVICE_PORT: 80
+

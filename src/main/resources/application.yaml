@@ -1,0 +1,9 @@
+
+openwhisk:
+  apiHost: "http://nginx.openwhisk.svc.cluster.local/api/v1/namespaces/_/triggers"
+  dbName: "jmstriggerfeeds"
+
+spring:
+  artemis:
+    host: artemis-client
+    port: 61616
